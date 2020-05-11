@@ -47,7 +47,9 @@
 			</view>
 
 		</view>
-
+		
+		<view class="goTop icon-top" @tap="hGoTop" v-if="!isShow"></view>
+		
 	</view>
 </template>
 
@@ -65,7 +67,8 @@
 				// 分类数据
 				categoryData:[],
 				// 楼层图数据
-				floorsData:[]
+				floorsData:[],
+				isShow: true
 			}
 		},
 		// 2.注册
@@ -103,6 +106,10 @@
 					url:'/api/public/v1/home/floordata'
 				})
 				this.floorsData = res
+			},
+			// 点击按钮回到顶部
+			hGoTop () {
+				uni.pageScrollTo({scrollTop:0})
 			}
 		},
 		// 页面加载时
@@ -116,28 +123,47 @@
 		},
 		// 下拉刷新时 
 		async onPullDownRefresh (e) {
-			// 等待提示
-    	uni.showLoading({
-    	  title:'数据加载中...'
-    	})
+			
 			// 获取banner
 			await this.getBanner () 
 			// 获取分类
 			await this.getCategory ()
 			// 获取楼层图数据
 			await this.getFloors ()
-			uni.hideLoading()
-			
+		
 			uni.stopPullDownRefresh()
 		},
-
+		// 界面滚动
+		onPageScroll (e) {
+			if(e.scrollTop>200) {
+				this.isShow = false
+			}else {this.isShow = true}
+		}
 	}
 </script>
 
 
 
 <style lang="less">
-  
+
+  .goTop {
+		position: fixed;
+		bottom: 65rpx;
+		right: 30rpx;
+		background-color: rgba(255,255,255,.8);
+
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 50%;
+		line-height: 100rpx;
+		text-align: center;
+		font-size: 48rpx;
+		color: #666;
+		&:hover {
+			cursor:pointer
+		}
+	}
+
 	// 轮播图
 	.banner {
 		height: 340rpx;

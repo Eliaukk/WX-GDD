@@ -12,6 +12,18 @@
       "style": {
         "navigationBarTitleText": "分类"
       }
+    },
+    {
+      "path": "pages/search/index",
+      "style": {
+        "navigationBarTitleText": "搜索"
+      }
+    },
+    {
+      "path": "pages/goods/index",
+      "style": {
+        "navigationBarTitleText": "详情"
+      }
     }
   ],
   "globalStyle": {

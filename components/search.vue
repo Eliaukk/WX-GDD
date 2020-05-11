@@ -6,7 +6,7 @@
     <!-- 搜索区盒子 -->
     <view class="box">
       <!-- 2.注册事件 -->
-      <input type="text" @focus="ipt_focus" :placeholder="placeholder" @input="hInput" v-model.trim="key"/>
+      <input type="text" @focus="ipt_focus" :placeholder="placeholder" @confirm="hConfirm" @input="hInput" v-model.trim="key"/>
       <!-- 按钮有自己默认样式 -->
       <view class="cancel" @tap="ipt_blur">取消</view>
 
@@ -17,12 +17,20 @@
     </view>
 
     <!-- 搜索建议 -->
-    <view  class="history">
-      <navigator v-for="(item,index) in suggestList" :key="item.goods_id">{{item.goods_name}}</navigator>
-    </view>
+    <scroll-view class="result" >
+      <navigator :url="'/pages/goods/index?id='+item.goods_id" class="suggest" v-for="item in suggestList" :key="item.goods_id">{{item.goods_name}}</navigator>
+    </scroll-view> 
 
     <!-- 历史搜索 -->
-    <view class="history" v-if="!suggestList.length">历史记录</view>
+    <view class="history " v-if="!suggestList.length">
+      <view class="hd ">
+        历史搜索
+        <image class="clear" @tap="hDel" src="../static/images/clear.png"></image>
+      </view>
+      <view class="bd">
+        <navigator :url="'/pages/search/index?query='+item" v-for="(item,index) in historyList" :key="index">{{item}}</navigator>
+      </view>
+    </view>
 
 
 
@@ -41,11 +49,53 @@ export default {
       // 输入框数据
       key:'',
       // 搜索建议
-      suggestList:[]
-
+      suggestList:[],
+      // 搜索历史记录
+      historyList:uni.getStorageSync('history')||[]
     }
   },
   methods:{
+    // 清除本地搜索记录
+    hDel () {
+      uni.showModal({
+        content:'确定删除搜索记录？',
+        success() {
+          // 清空程序历史记录数据
+          this.historyList= []
+          uni.removeStorageSync('history')
+        }
+      })
+    },
+    // 确认按钮
+    hConfirm() {
+      // 更新本地搜索记录
+      let history = uni.getStorageSync('history')||[]
+      // 本地搜索记录有没有重复的搜索记录
+      const index = history.findIndex((v,i)=>{
+        return v === this.key
+      })
+      // 没有重复
+      if(index===-1){
+        // 添加到搜索记录中
+        history.unshift(this.key)
+      }else {
+        history.splice(index,1)
+        history.unshift(this.key)
+      }
+
+      // 更新history数据
+      this.historyList = history
+      uni.setStorageSync('history',history)
+      // 清空输入框
+      this.key = ''
+      this.suggestList = []
+
+
+      // 跳转到搜索结果页面
+      uni.navigateTo({
+        url:'/pages/search/index?query='+this.key
+      })
+    },
     // 3.处于聚焦的时候，添加类名啊！
     ipt_focus(){
       // 3.1 data有个初始化数据，要个视图保持一致
@@ -71,30 +121,26 @@ export default {
     // 失去聚焦的类名:回到默认状态
     ipt_blur(){
       this.isFocus = false;
-
-      // 
       this.placeholder = "";
 
-
-      // 
       this.$emit("send","auto");
+      // 搜索关键字清空
+      this.key = ''
+      // 联想列表清空
+      this.suggestList = []
     },
-    // 获取搜索建议
-    async getSuggest() {
-      const key = this.key
+    // input事件
+    async hInput () {
       const res = await this.$request({
         url:'/api/public/v1/goods/qsearch',
         data: {
-          query:key
+          query:this.key
         }
       })
+      console.log(res);
+      
       // 获取数据
       this.suggestList = res
-      console.log(res);
-    },
-    // input事件
-    hInput () {
-      this.getSuggest()
     }
   }
 }
@@ -170,7 +216,6 @@ export default {
         flex: 1;
         padding-left: 55rpx;
         font-size: 24rpx;
-        color: #ccc;
       }
       .cancel {
         display: block;
@@ -203,7 +248,7 @@ export default {
     }
 
     // 历史记录
-    .history {
+    .history,.result {
       display: block;
       position: absolute;
       top: 100rpx;
@@ -211,6 +256,46 @@ export default {
       left: 0;
       right: 0;
       background-color: #fff;
+      
+    }
+    .history {
+      padding: 27rpx;
+      .hd {
+        font-size: 27rpx;
+        display: flex;
+        align-items: center;
+        margin-bottom: 27rpx;
+        .clear {
+          display: inline-block;
+          width: 27rpx;
+          height: 27rpx;
+          margin-left: auto;
+        }
+      }
+      .bd {
+        navigator {
+          display: inline-block;
+          line-height: 1;
+          padding: 15rpx 20rpx 12rpx;
+          background-color: #ddd;
+          font-size: 24rpx;
+          margin-right: 20rpx;
+          margin-bottom: 15rpx;
+          color: #333;
+        }
+      }
+    }
+    .result {
+      navigator {
+        line-height: 1;
+        padding: 20rpx 30rpx;
+        font-size: 24rpx;
+        color: #666;
+        border-bottom: 1px solid #eee;
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
     }
   }
 </style>
